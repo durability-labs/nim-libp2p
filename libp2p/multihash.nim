@@ -26,6 +26,7 @@
 
 import tables
 import nimcrypto/[sha, sha2, keccak, blake2, hash, utils]
+import poseidon2
 import varint, vbuffer, multicodec, multibase
 import stew/base58
 import results
@@ -226,6 +227,11 @@ proc shake_256hash(data: openArray[byte], output: var openArray[byte]) =
     discard sctx.output(addr output[0], uint(len(output)))
     sctx.clear()
 
+proc poseidon2hash(data: openArray[byte], output: var openArray[byte]) =
+  if len(output) > 0:
+    var digest = poseidon2.merkleRoot(data).toBytes()
+    copyMem(addr output[0], addr digest[0], uint(len(output)))
+
 const HashesList = [
   MHash(mcodec: multiCodec("identity"), size: 0, coder: identhash),
   MHash(mcodec: multiCodec("sha1"), size: sha1.sizeDigest, coder: sha1hash),
@@ -348,6 +354,7 @@ const HashesList = [
   MHash(mcodec: multiCodec("blake2s-240"), size: 30, coder: blake2Shash),
   MHash(mcodec: multiCodec("blake2s-248"), size: 31, coder: blake2Shash),
   MHash(mcodec: multiCodec("blake2s-256"), size: 32, coder: blake2Shash),
+  MHash(mcodec: multiCodec("poseidon2-alt_bn_128-a2-cdx1"), size: 32, coder: poseidon2hash)
 ]
 
 proc initMultiHashCodeTable(): Table[MultiCodec, MHash] {.compileTime.} =
