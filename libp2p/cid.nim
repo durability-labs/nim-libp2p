@@ -69,7 +69,8 @@ const ContentIdsList* = [
   multiCodec("ed25519-pub"),
   multiCodec("codex-manifest"),
   multiCodec("codex-block"),
-  multiCodec("codex-root")
+  multiCodec("codex-slot-root"),
+  multiCodec("codex-proving-root")
 ]
 
 proc initCidCodeTable(): Table[int, MultiCodec] {.compileTime.} =

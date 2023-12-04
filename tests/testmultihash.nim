@@ -13,7 +13,7 @@ import unittest2
 import nimcrypto/utils
 import ../libp2p/multihash
 
-const RustTestVectors = [
+const TestVectors = [
   ["sha1", "beep boop", "11147C8357577F51D4F0A8D393AA1AAAFB28863D9421"],
   [
     "sha2-256", "helloworld",
@@ -67,13 +67,15 @@ const RustTestVectors = [
          B7C42181F40AA1046F39E2EF9EFC6910782A998E0013D172458957957FAC9405
          B67D""",
   ],
-]
-const CodexTestVectors = [
   [
-    "poseidon2-alt_bn_128-a2-cdx1",
+    "poseidon2-alt_bn_128-sponge-r2",
     "hello world",
-    # TODO: https://github.com/codex-storage/nim-poseidon2/issues/5#issuecomment-1787447258
-    "8180B406 20 68656C6C6F20776F726C64000000000000000000000000000000000000000000"
+    """909A0320823F7FB71C0998153E73AC734AE4870518F5FE324BD2484B68B565C288CF1E1E"""
+  ],
+  [
+    "poseidon2-alt_bn_128-mekle-2kb",
+    "hello world",
+    """919A0320D9A6AE0CBF28C5E9CBE28D7231D3A4DEDF8B3826B0F8C3C002CA95C21253E614"""
   ]
 ]
 
@@ -89,10 +91,6 @@ suite "MultiHash test suite":
       hex(mh1) == hex(mh2)
       mh1 == mh2
 
-  test "rust-multihash test vectors":
-    for item in RustTestVectors:
-      checkTestVector(item)
-
-  test "codex test vectors":
-    for item in CodexTestVectors:
+  test "multihash test vectors":
+    for item in TestVectors:
       checkTestVector(item)

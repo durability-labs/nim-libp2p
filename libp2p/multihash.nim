@@ -25,6 +25,7 @@
 {.used.}
 
 import tables
+import sequtils
 import nimcrypto/[sha, sha2, keccak, blake2, hash, utils]
 import poseidon2
 import varint, vbuffer, multicodec, multibase
@@ -227,9 +228,14 @@ proc shake_256hash(data: openArray[byte], output: var openArray[byte]) =
     discard sctx.output(addr output[0], uint(len(output)))
     sctx.clear()
 
-proc poseidon2hash(data: openArray[byte], output: var openArray[byte]) =
+proc poseidon2_sponge_rate2(data: openArray[byte], output: var openArray[byte]) =
   if len(output) > 0:
-    var digest = poseidon2.merkleRoot(data).toBytes()
+    var digest = poseidon2.Sponge.digest(data).toBytes()
+    copyMem(addr output[0], addr digest[0], uint(len(output)))
+
+proc poseidon2_merkle_2kb_sponge(data: openArray[byte], output: var openArray[byte]) =
+  if len(output) > 0:
+    var digest = poseidon2.SpongeMerkle.digest(data, 2048).toBytes()
     copyMem(addr output[0], addr digest[0], uint(len(output)))
 
 const HashesList = [
@@ -354,7 +360,8 @@ const HashesList = [
   MHash(mcodec: multiCodec("blake2s-240"), size: 30, coder: blake2Shash),
   MHash(mcodec: multiCodec("blake2s-248"), size: 31, coder: blake2Shash),
   MHash(mcodec: multiCodec("blake2s-256"), size: 32, coder: blake2Shash),
-  MHash(mcodec: multiCodec("poseidon2-alt_bn_128-a2-cdx1"), size: 32, coder: poseidon2hash)
+  MHash(mcodec: multiCodec("poseidon2-alt_bn_128-sponge-r2"), size: 32, coder: poseidon2_sponge_rate2),
+  MHash(mcodec: multiCodec("poseidon2-alt_bn_128-mekle-2kb"), size: 32, coder: poseidon2_merkle_2kb_sponge)
 ]
 
 proc initMultiHashCodeTable(): Table[MultiCodec, MHash] {.compileTime.} =
@@ -362,6 +369,7 @@ proc initMultiHashCodeTable(): Table[MultiCodec, MHash] {.compileTime.} =
     result[item.mcodec] = item
 
 const CodeHashes = initMultiHashCodeTable()
+const MultiHashCodecsList* = HashesList.mapIt( it.mcodec )
 
 proc digestImplWithHash(hash: MHash, data: openArray[byte]): MultiHash =
   var buffer: array[MaxHashSize, byte]
