@@ -67,6 +67,7 @@ const ContentIdsList* = [
   multiCodec("torrent-info"),
   multiCodec("torrent-file"),
   multiCodec("ed25519-pub"),
+    multiCodec("codex-root"),
   multiCodec("codex-manifest"),
   multiCodec("codex-block"),
   multiCodec("codex-slot-root"),
