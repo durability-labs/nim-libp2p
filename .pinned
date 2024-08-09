@@ -19,5 +19,5 @@ websock;https://github.com/status-im/nim-websock@#d5cd89062cd2d168ef35193c7d29d2
 zlib;https://github.com/status-im/nim-zlib@#daa8723fd32299d4ca621c837430c29a5a11e19a
 jwt;https://github.com/vacp2p/nim-jwt@#18f8378de52b241f321c1f9ea905456e89b95c6f
 bearssl_pkey_decoder;https://github.com/vacp2p/bearssl_pkey_decoder@#21dd3710df9345ed2ad8bf8f882761e07863b8e0
-poseidon2;https://github.com/codex-storage/nim-poseidon2@#e173dd817b794d2bdadaa7ed45583798aaa91f0d
 constantine;https://github.com/mratsim/constantine@#1e34ec22929eaba7bcf1681350ec21aed8f370f7
+poseidon2;https://github.com/codex-storage/nim-poseidon2@#e173dd817b794d2bdadaa7ed45583798aaa91f0d
