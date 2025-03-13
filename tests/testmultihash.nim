@@ -68,15 +68,13 @@ const TestVectors = [
          B67D""",
   ],
   [
-    "poseidon2-alt_bn_128-sponge-r2",
-    "hello world",
-    """909A0320823F7FB71C0998153E73AC734AE4870518F5FE324BD2484B68B565C288CF1E1E"""
+    "poseidon2-alt_bn_128-sponge-r2", "hello world",
+    """909A0320823F7FB71C0998153E73AC734AE4870518F5FE324BD2484B68B565C288CF1E1E""",
   ],
   [
-    "poseidon2-alt_bn_128-merkle-2kb",
-    "hello world",
-    """919A0320D9A6AE0CBF28C5E9CBE28D7231D3A4DEDF8B3826B0F8C3C002CA95C21253E614"""
-  ]
+    "poseidon2-alt_bn_128-merkle-2kb", "hello world",
+    """919A0320D9A6AE0CBF28C5E9CBE28D7231D3A4DEDF8B3826B0F8C3C002CA95C21253E614""",
+  ],
 ]
 
 suite "MultiHash test suite":
