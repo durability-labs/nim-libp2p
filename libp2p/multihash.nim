@@ -35,7 +35,7 @@ import blscurve/bls_public_exports
 
 export results
 # This is workaround for Nim `import` bug.
-export sha, sha2, keccak, blake2, hash, utils, bls_public_exports
+export sha, sha2, keccak, blake2, hash, utils
 
 const
   MaxHashSize* = 128
