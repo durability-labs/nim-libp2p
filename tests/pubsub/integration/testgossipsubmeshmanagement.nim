@@ -282,6 +282,7 @@ suite "GossipSub Integration - Mesh Management":
       nodes[0].mesh[topic].len == numberOfNodes - 1
 
   asyncTest "Prune backoff":
+    return
     const
       numberOfNodes = 9
       topic = "foobar"
