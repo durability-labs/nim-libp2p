@@ -286,7 +286,8 @@ suite "GossipSub Integration - Mesh Management":
       numberOfNodes = 9
       topic = "foobar"
       pruneBackoff = 1.seconds # 1s is the minimum
-      checkTimeout = 10.seconds # increased because for quick transport it takes more time
+      checkTimeout = 10.seconds
+        # increased because for quick transport it takes more time
       dValues = some(
         DValues(
           dLow: some(6),
