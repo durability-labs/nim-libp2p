@@ -14,7 +14,7 @@ switch("warningAsError", "UseBase:on")
 --styleCheck:
   error
 --mm:
-  refc
+  orc
   # reconsider when there's a version-2-2 branch worth testing with as we might switch to orc
 
 # Avoid some rare stack corruption while using exceptions with a SEH-enabled
