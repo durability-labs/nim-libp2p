@@ -16,9 +16,13 @@ suite "Quic":
   teardown:
     checkTrackers()
 
+  ## if numberOfNodes is small (< 10) tests pass 
+  ## if --mm:[orc,arc,boehm,markAndSweep] tests pass (if --mm:refc test fails)
+  ## in ci; tests are passing on some environments (mm:refc)
+
   asyncTest "Random Nil Pointer Dereference Test":
     let
-      numberOfNodes = 10
+      numberOfNodes = 15
       nodes = generateNodes(numberOfNodes, gossip = true).toGossipSub()
 
     startNodesAndDeferStop(nodes)
