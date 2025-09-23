@@ -21,7 +21,7 @@ requires "websock >= 0.2.0"
 requires "unittest2"
 requires "results"
 requires "https://github.com/vacp2p/nim-jwt.git#18f8378de52b241f321c1f9ea905456e89b95c6f"
-requires "https://github.com/codex-storage/nim-poseidon2.git#main",
+requires "https://github.com/durability-labs/nim-poseidon2 >= 0.1.0 & < 0.2.0"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
 let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
