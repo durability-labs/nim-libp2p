@@ -19,7 +19,7 @@ requires "stew >= 0.4.0"
 requires "websock >= 0.2.0"
 requires "unittest2"
 requires "results"
-requires "quic >= 0.2.16"
+requires "https://github.com/durability-labs/nim-quic#update-dependencies"
 requires "https://github.com/vacp2p/nim-jwt.git#18f8378de52b241f321c1f9ea905456e89b95c6f"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
