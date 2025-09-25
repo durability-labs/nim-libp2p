@@ -7,11 +7,21 @@ description = "LibP2P implementation"
 license = "MIT"
 skipDirs = @["tests", "examples", "Nim", "tools", "scripts", "docs"]
 
-requires "nim >= 2.0.0",
-  "nimcrypto >= 0.6.0 & < 0.7.0", "dnsclient >= 0.3.0 & < 0.4.0", "bearssl >= 0.2.5",
-  "chronicles >= 0.11.0 & < 0.12.0", "chronos >= 4.0.4", "metrics", "secp256k1",
-  "stew >= 0.4.0", "websock >= 0.2.0", "unittest2", "results", "quic >= 0.2.16",
-  "https://github.com/vacp2p/nim-jwt.git#18f8378de52b241f321c1f9ea905456e89b95c6f"
+requires "nim >= 2.0.0"
+requires "nimcrypto >= 0.6.0"
+requires "dnsclient >= 0.3.0"
+requires "bearssl >= 0.2.5"
+requires "blscurve >= 0.0.1"
+requires "chronicles >= 0.11.0"
+requires "chronos >= 4.0.4"
+requires "metrics"
+requires "secp256k1"
+requires "stew >= 0.4.0"
+requires "websock >= 0.2.0"
+requires "unittest2"
+requires "results"
+requires "https://github.com/vacp2p/nim-jwt.git#18f8378de52b241f321c1f9ea905456e89b95c6f"
+requires "https://github.com/durability-labs/nim-poseidon2 >= 0.1.0 & < 0.2.0"
 
 let nimc = getEnv("NIMC", "nim") # Which nim compiler to use
 let lang = getEnv("NIMLANG", "c") # Which backend (c/cpp/js)
