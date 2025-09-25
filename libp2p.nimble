@@ -8,10 +8,10 @@ license = "MIT"
 skipDirs = @["tests", "examples", "Nim", "tools", "scripts", "docs"]
 
 requires "nim >= 2.0.0"
-requires "nimcrypto >= 0.6.0 & < 0.7.0"
-requires "dnsclient >= 0.3.0 & < 0.4.0"
+requires "nimcrypto >= 0.6.0"
+requires "dnsclient >= 0.3.0"
 requires "bearssl >= 0.2.5"
-requires "chronicles >= 0.11.0 & < 0.12.0"
+requires "chronicles >= 0.11.0"
 requires "chronos >= 4.0.4"
 requires "metrics"
 requires "secp256k1"
