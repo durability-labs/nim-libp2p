@@ -13,7 +13,7 @@ import unittest2
 import nimcrypto/utils
 import ../libp2p/multihash
 
-const RustTestVectors = [
+const TestVectors = [
   ["sha1", "beep boop", "11147C8357577F51D4F0A8D393AA1AAAFB28863D9421"],
   [
     "sha2-256", "helloworld",
@@ -67,16 +67,27 @@ const RustTestVectors = [
          B7C42181F40AA1046F39E2EF9EFC6910782A998E0013D172458957957FAC9405
          B67D""",
   ],
+  [
+    "poseidon2-alt_bn_128-sponge-r2", "hello world",
+    """909A0320823F7FB71C0998153E73AC734AE4870518F5FE324BD2484B68B565C288CF1E1E""",
+  ],
+  [
+    "poseidon2-alt_bn_128-merkle-2kb", "hello world",
+    """919A0320D9A6AE0CBF28C5E9CBE28D7231D3A4DEDF8B3826B0F8C3C002CA95C21253E614""",
+  ],
 ]
 
 suite "MultiHash test suite":
-  test "rust-multihash test vectors":
-    for item in RustTestVectors:
-      var msg = item[1]
-      var bmsg = cast[seq[byte]](msg)
-      var mh1 = MultiHash.digest(item[0], bmsg).get()
-      var mh2 = MultiHash.init(stripSpaces(item[2])).get()
-      check:
-        hex(mh1) == stripSpaces(item[2])
-        hex(mh1) == hex(mh2)
-        mh1 == mh2
+  template checkTestVector(vector) =
+    var msg = vector[1]
+    var bmsg = cast[seq[byte]](msg)
+    var mh1 = MultiHash.digest(vector[0], bmsg).get()
+    var mh2 = MultiHash.init(stripSpaces(vector[2])).get()
+    check:
+      hex(mh1) == stripSpaces(vector[2])
+      hex(mh1) == hex(mh2)
+      mh1 == mh2
+
+  test "multihash test vectors":
+    for item in TestVectors:
+      checkTestVector(item)
