@@ -93,23 +93,31 @@ template getProtoHeader*(field: ProtoField): uint64 =
   ## Get protobuf's field header integer for ``field``.
   ((uint64(field.index) shl 3) or uint64(field.kind))
 
+template highEnd(pb: ProtoBuffer): int =
+  ## End offset of the readable region. `length` is an absolute end offset
+  ## when nonzero; zero means the whole remaining buffer (default).
+  if pb.length > 0:
+    min(pb.length, len(pb.buffer))
+  else:
+    len(pb.buffer)
+
 template toOpenArray*(pb: ProtoBuffer): untyped =
-  toOpenArray(pb.buffer, pb.offset, len(pb.buffer) - 1)
+  toOpenArray(pb.buffer, pb.offset, highEnd(pb) - 1)
 
 template lenu64*(x: untyped): untyped =
   uint64(len(x))
 
 template isEmpty*(pb: ProtoBuffer): bool =
-  len(pb.buffer) - pb.offset <= 0
+  highEnd(pb) - pb.offset <= 0
 
 template isEnough*(pb: ProtoBuffer, length: uint64): bool =
-  pb.offset <= len(pb.buffer) and length <= uint64(len(pb.buffer) - pb.offset)
+  pb.offset <= highEnd(pb) and length <= uint64(highEnd(pb) - pb.offset)
 
 template getPtr*(pb: ProtoBuffer): pointer =
   cast[pointer](unsafeAddr pb.buffer[pb.offset])
 
 template getLen*(pb: ProtoBuffer): int =
-  len(pb.buffer) - pb.offset
+  highEnd(pb) - pb.offset
 
 proc vsizeof*(field: ProtoField): int {.inline.} =
   ## Returns number of bytes required to store protobuf's field ``field``.
@@ -583,6 +591,60 @@ proc getRequiredField*[T](
     ok()
   else:
     err(RequiredFieldMissing)
+
+proc initView*(pb: ProtoBuffer, offset, length: int): ProtoBuffer =
+  ## Bounded view into `pb.buffer` over [offset, offset + length), sharing
+  ## the underlying seq (no copy).
+  ProtoBuffer(
+    options: pb.options, buffer: pb.buffer, offset: offset, length: offset + length
+  )
+
+proc getRepeatedViews*(
+    data: ProtoBuffer, field: int, output: var seq[ProtoBuffer]
+): ProtoResult[bool] =
+  ## Zero-copy variant of getRepeatedField: yields bounded views into the
+  ## parent buffer instead of copying each element out. Views share the
+  ## parent buffer's seq - the caller must keep it alive while decoding.
+  checkFieldNumber(field)
+  var pb = data
+  output.setLen(0)
+
+  while not (pb.isEmpty()):
+    var header: ProtoHeader
+    let hres = pb.getHeader(header)
+    if hres.isErr():
+      output.setLen(0)
+      return err(hres.error)
+    if header.index == uint64(field):
+      if header.wire == ProtoFieldKind.Length:
+        var length = 0
+        var bsize = 0'u64
+        if PB.getUVarint(pb.toOpenArray(), length, bsize).isOk():
+          pb.offset += length
+          if pb.isEnough(bsize):
+            output.add(initView(pb, pb.offset, int(bsize)))
+            pb.offset += int(bsize)
+          else:
+            output.setLen(0)
+            return err(ProtoError.MessageIncomplete)
+        else:
+          output.setLen(0)
+          return err(ProtoError.VarintDecode)
+      else:
+        let sres = pb.skipValue(header)
+        if sres.isErr():
+          output.setLen(0)
+          return err(sres.error)
+    else:
+      let sres = pb.skipValue(header)
+      if sres.isErr():
+        output.setLen(0)
+        return err(sres.error)
+
+  if len(output) > 0:
+    ok(true)
+  else:
+    ok(false)
 
 proc getRepeatedField*[T: seq[byte] | string](
     data: ProtoBuffer, field: int, output: var seq[T]
