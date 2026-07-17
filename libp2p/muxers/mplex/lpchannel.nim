@@ -12,6 +12,7 @@
 import std/[oids, strformat]
 import pkg/[chronos, chronicles, metrics]
 import ./coder, ../muxer, ../../stream/[bufferstream, connection], ../../peerinfo
+import ../../varint
 
 export connection
 
@@ -286,6 +287,51 @@ method write*(
       prepareWrite(s, msg)
 
   s.completeWrite(fut, msg.len)
+
+proc prepareWriteLp(
+    s: LPChannel, prefix: seq[byte], msg: seq[byte]
+): Future[void] {.async: (raises: [CancelledError, LPStreamError]).} =
+  ## Slow path of writeLp - see conditions in writeLp. Takes owned seqs:
+  ## openArray views must not cross the awaits below.
+  if s.remoteReset:
+    trace "stream is reset when prepareWriteLp", s
+    raise newLPStreamResetError()
+  if s.closedLocal:
+    raise newLPStreamClosedError()
+  if s.conn.closed:
+    raise newLPStreamConnDownError()
+
+  if s.writes >= MaxWrites:
+    debug "Closing connection, too many in-flight writes on channel",
+      s, conn = s.conn, writes = s.writes
+    when defined(libp2p_mplex_metrics):
+      libp2p_mplex_qlenclose.inc()
+    await s.reset()
+    await s.conn.close()
+    return
+
+  if not s.isOpen:
+    await s.open()
+
+  await s.conn.writeMsg(s.id, s.msgCode, prefix, msg)
+
+method writeLp*(
+    s: LPChannel, msg: openArray[byte]
+): Future[void] {.async: (raises: [CancelledError, LPStreamError], raw: true).} =
+  ## Write `msg` with a varint length prefix, avoiding the base
+  ## implementation's full-message concat with the prefix.
+  let
+    vbytes = PB.toBytes(msg.len().uint64)
+    closed = s.closedLocal or s.conn.closed
+
+  let fut =
+    if (not closed) and s.writes < MaxWrites and s.isOpen:
+      # Fast path: prefix and msg are consumed synchronously by writeMsg
+      s.conn.writeMsg(s.id, s.msgCode, vbytes.toOpenArray(), msg)
+    else:
+      prepareWriteLp(s, @(vbytes.toOpenArray()), @msg)
+
+  s.completeWrite(fut, vbytes.len + msg.len)
 
 method getWrapped*(s: LPChannel): Connection =
   s.conn
