@@ -50,16 +50,33 @@ proc readMsg*(
 
   return (header shr 3, MessageType(msgType), data)
 
-proc writeMsg*(
-    conn: Connection, id: uint64, msgType: MessageType, data: seq[byte] = @[]
-): Future[void] {.async: (raises: [CancelledError, LPStreamError], raw: true).} =
+proc encodedSize(id: uint64, msgType: MessageType, dataLen: int): int =
+  ## Exact size of the chunked wire encoding of a `dataLen`-byte message.
+  let header = id shl 3 or ord(msgType).uint64
+  if dataLen == 0:
+    return vsizeof(header) + vsizeof(uint(0))
+  var left = dataLen
+  while left > 0:
+    let chunkSize =
+      if left > MaxMsgSize:
+        MaxMsgSize - 64
+      else:
+        left
+    result += vsizeof(header) + vsizeof(uint(chunkSize)) + chunkSize
+    left = left - chunkSize
+
+proc encodeMsg*(
+    buf: var VBuffer, id: uint64, msgType: MessageType, prefix, data: openArray[byte]
+) =
+  ## Write the chunked length-prefixed encoding of `prefix ++ data` into
+  ## `buf`, without materializing the concatenation.
+  let totalLen = prefix.len + data.len
   var
-    left = data.len
+    left = totalLen
     offset = 0
-    buf = initVBuffer()
 
   # Split message into length-prefixed chunks
-  while left > 0 or data.len == 0:
+  while left > 0 or totalLen == 0:
     let chunkSize =
       if left > MaxMsgSize:
         MaxMsgSize - 64
@@ -67,19 +84,50 @@ proc writeMsg*(
         left
 
     buf.writePBVarint(id shl 3 or ord(msgType).uint64)
-    buf.writeSeq(data.toOpenArray(offset, offset + chunkSize - 1))
+    if chunkSize == 0:
+      buf.writeLPVarint(0.uint)
+    elif offset + chunkSize <= prefix.len:
+      buf.writeSeq(prefix.toOpenArray(offset, offset + chunkSize - 1))
+    elif offset >= prefix.len:
+      buf.writeSeq(data.toOpenArray(offset - prefix.len, offset - prefix.len + chunkSize - 1))
+    else:
+      # Chunk spans the prefix/data seam: write the length varint, then
+      # both parts raw.
+      let firstLen = prefix.len - offset
+      buf.writeLPVarint(uint(chunkSize))
+      buf.writeArray(prefix.toOpenArray(offset, prefix.high))
+      buf.writeArray(data.toOpenArray(0, chunkSize - firstLen - 1))
+
     left = left - chunkSize
     offset = offset + chunkSize
 
-    if data.len == 0:
+    if totalLen == 0:
       break
 
+proc writeMsg*(
+    conn: Connection,
+    id: uint64,
+    msgType: MessageType,
+    prefix: openArray[byte],
+    data: openArray[byte],
+): Future[void] {.async: (raises: [CancelledError, LPStreamError], raw: true).} =
+  ## Write `prefix ++ data` as chunked length-prefixed mplex frames,
+  ## without materializing the concatenation. Single underlying write,
+  ## so close/reset messages cannot interleave between chunks.
+  var buf = VBuffer(buffer: newSeqOfCap[byte](encodedSize(id, msgType, prefix.len + data.len)))
+  encodeMsg(buf, id, msgType, prefix, data)
+
   trace "writing mplex message",
-    conn, id, msgType, data = data.len, encoded = buf.buffer.len
+    conn, id, msgType, data = prefix.len + data.len, encoded = buf.buffer.len
 
   # Write all chunks in a single write to avoid async races where a close
   # message gets written before some of the chunks
   conn.write(buf.buffer)
+
+proc writeMsg*(
+    conn: Connection, id: uint64, msgType: MessageType, data: seq[byte] = @[]
+): Future[void] {.async: (raises: [CancelledError, LPStreamError], raw: true).} =
+  conn.writeMsg(id, msgType, default(seq[byte]), data)
 
 proc writeMsg*(
     conn: Connection, id: uint64, msgType: MessageType, data: string
